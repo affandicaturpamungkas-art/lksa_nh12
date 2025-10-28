@@ -10,6 +10,27 @@ if ($_SESSION['jabatan'] != 'Pimpinan' && $_SESSION['jabatan'] != 'Kepala LKSA' 
 
 $id_lksa = $_SESSION['id_lksa'];
 
+// --- FUNGSI BARU UNTUK FORMAT TANGGAL KE INDONESIA ---
+function format_tanggal_indo($date_string) {
+    if (!$date_string) return '-';
+    // Cek apakah string adalah format tanggal YYYY-MM-DD
+    if (preg_match("/^\d{4}-\d{2}-\d{2}$/", $date_string)) {
+        $bulan_indonesia = [
+            '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
+            '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
+            '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+        ];
+        $parts = explode('-', $date_string);
+        $day = $parts[2];
+        $month = $bulan_indonesia[$parts[1]];
+        $year = $parts[0];
+        return $day . ' ' . $month . ' ' . $year;
+    }
+    // Jika bukan tanggal, kembalikan string aslinya (misalnya: nama hari 'Senin')
+    return $date_string;
+}
+// ----------------------------------------------------
+
 // Ambil input pencarian dan filter
 $search_query = $_GET['search'] ?? '';
 $filter_by = $_GET['filter_by'] ?? 'All'; // Default: Cari di semua kolom
@@ -106,11 +127,11 @@ $result = $stmt->get_result();
     /* GAYA BARU: Mengizinkan kolom alamat pecah baris agar tampilan ringkas */
     #kotak-amal-table .alamat-col {
         white-space: normal;
-        max-width: 350px;
-        width: 350px; 
+        max-width: 250px; /* Lebar kolom dikurangi untuk tampilan compact */
+        width: 250px; 
     }
     
-    /* GAYA BARU UNTUK FORM PENCARIAN (SIMPLE) */
+    /* GAYA BARU UNTUK FORM PENCARIAN (SIMPLE & COMPACT) */
     .search-control-group-simple {
         display: flex;
         align-items: stretch; /* Membuat semua item memiliki tinggi yang sama */
@@ -122,22 +143,45 @@ $result = $stmt->get_result();
         overflow: hidden; /* Penting untuk menyatukan border */
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    .search-select-simple, .search-input-simple {
+    .search-select-wrapper { /* Wrapper baru untuk ikon + select */
+        position: relative;
+        flex-shrink: 0;
+        width: 150px;
+        border-right: 1px solid #E5E7EB;
+        background-color: #F9FAFB;
+    }
+    .filter-icon { /* Ikon Filter */
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280; /* Warna abu-abu yang lebih lembut */
+        font-size: 1.1em;
+        pointer-events: none; /* Agar klik bisa menembus ke select */
+        z-index: 2;
+    }
+    .search-select-simple {
+        padding: 10px 15px 10px 35px; /* Tambahkan padding kiri untuk ikon */
+        border: none;
+        /* PERUBAHAN UKURAN FONT */
+        font-size: 0.9em; 
+        background-color: transparent; /* Ubah ke transparan */
+        transition: background-color 0.2s;
+        width: 100%;
+        height: 100%;
+        font-weight: 600;
+        color: var(--primary-color);
+        -webkit-appearance: none; /* Hilangkan default arrow di Chrome/Safari */
+        -moz-appearance: none; /* Hilangkan default arrow di Firefox */
+        appearance: none; /* Hilangkan default arrow di standar */
+        cursor: pointer;
+    }
+    .search-input-simple {
         padding: 10px 15px;
         border: none;
         font-size: 1em;
         background-color: white;
         transition: background-color 0.2s;
-    }
-    .search-select-simple {
-        width: 150px;
-        flex-shrink: 0;
-        border-right: 1px solid #E5E7EB;
-        background-color: #F9FAFB;
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-    .search-input-simple {
         flex-grow: 1;
         min-width: 150px;
     }
@@ -160,12 +204,13 @@ $result = $stmt->get_result();
     }
     .btn-reset-simple:hover { background-color: #7f8c8d; }
 
+    /* MEDIA QUERIES */
     @media (max-width: 600px) {
         .search-control-group-simple {
             flex-direction: column;
             border-radius: 8px;
         }
-        .search-select-simple {
+        .search-select-wrapper {
             width: 100%;
             border-right: none;
             border-bottom: 1px solid #E5E7EB;
@@ -177,6 +222,15 @@ $result = $stmt->get_result();
         }
         .btn-search-simple {
             border-radius: 0;
+        }
+        .search-select-simple {
+            padding-right: 15px; /* Hapus padding agar teks lebih pas di mobile */
+        }
+        .filter-icon {
+            /* Pindahkan ikon ke kanan (opsional, untuk tata letak vertikal) */
+            left: auto;
+            right: 10px;
+            color: var(--primary-color);
         }
     }
 </style>
@@ -192,14 +246,18 @@ $result = $stmt->get_result();
 
 <form method="GET" action="" class="search-form">
     <div class="search-control-group-simple">
-        <select name="filter_by" id="filter_by" class="search-select-simple">
-            <?php 
-            foreach ($column_labels as $value => $label) {
-                $selected = ($filter_by == $value) ? 'selected' : '';
-                echo "<option value=\"$value\" $selected>$label</option>";
-            }
-            ?>
-        </select>
+        
+        <div class="search-select-wrapper">
+            <i class="fas fa-filter filter-icon"></i>
+            <select name="filter_by" id="filter_by" class="search-select-simple">
+                <?php 
+                foreach ($column_labels as $value => $label) {
+                    $selected = ($filter_by == $value) ? 'selected' : '';
+                    echo "<option value=\"$value\" $selected>$label</option>";
+                }
+                ?>
+            </select>
+        </div>
         
         <input type="text" name="search" placeholder="Cari di kolom terpilih..." value="<?php echo htmlspecialchars($search_query); ?>" class="search-input-simple">
         
@@ -233,8 +291,19 @@ $result = $stmt->get_result();
                 <td><?php echo $row['Nama_Toko']; ?></td>
                 <td class="alamat-col">
                     <?php 
-                        // Menampilkan Alamat_Toko yang sudah digabungkan (berisi alamat detail dan nama wilayah)
-                        echo htmlspecialchars($row['Alamat_Toko']); 
+                        $full_address = htmlspecialchars($row['Alamat_Toko']);
+                        // Cari posisi koma pertama
+                        $first_comma_pos = strpos($full_address, ',');
+                        
+                        if ($first_comma_pos !== false) {
+                            // Ambil substring sebelum koma pertama (yaitu alamat detail)
+                            $detail_address = substr($full_address, 0, $first_comma_pos);
+                        } else {
+                            // Jika tidak ada koma, anggap seluruhnya adalah alamat detail
+                            $detail_address = $full_address;
+                        }
+                        
+                        echo $detail_address;
                     ?>
                 </td>
                 <td><?php echo $row['ID_Provinsi'] ?? '-'; ?></td>
@@ -242,16 +311,12 @@ $result = $stmt->get_result();
                 <td><?php echo $row['ID_Kecamatan'] ?? '-'; ?></td>
                 <td><?php echo $row['ID_Kelurahan'] ?? '-'; ?></td>
                 <td><?php echo $row['Nama_Pemilik']; ?></td>
-                <td><?php echo $row['Jadwal_Pengambilan']; ?></td>
+                <td><?php echo format_tanggal_indo($row['Jadwal_Pengambilan']); ?></td>
                 <td>
-                    <a href="detail_kotak_amal.php?id=<?php echo $row['ID_KotakAmal']; ?>" class="btn btn-primary btn-action-icon" title="Lihat Profil & Lokasi"><i class="fas fa-map-marked-alt"></i></a>
-                    
-                    <a href="edit_kotak_amal.php?id=<?php echo $row['ID_KotakAmal']; ?>" class="btn btn-primary btn-action-icon" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="detail_kotak_amal.php?id=<?php echo $row['ID_KotakAmal']; ?>" class="btn btn-primary btn-action-icon" title="Lihat Profil & Lokasi"><i class="fas fa-eye"></i></a>
                     
                     <?php if ($row['is_collected_today']) { ?>
-                        <span style="color: green; font-weight: bold; font-size: 0.9em; margin-left: 5px;">Sudah Diambil</span>
-                    <?php } else { ?>
-                        <a href="dana-kotak-amal.php?id_kotak_amal=<?php echo $row['ID_KotakAmal']; ?>" class="btn btn-success" style="padding: 5px 10px; font-size: 0.9em;">Pengambilan</a>
+                        <span style="color: green; font-weight: bold; font-size: 0.9em; margin-left: 5px;">Diambil</span>
                     <?php } ?>
                     
                     <a href="proses_arsip_kotak_amal.php?id=<?php echo $row['ID_KotakAmal']; ?>" class="btn btn-danger btn-action-icon" title="Arsipkan" onclick="return confirm('Apakah Anda yakin ingin mengarsipkan Kotak Amal ini?');"><i class="fas fa-archive"></i></a>
