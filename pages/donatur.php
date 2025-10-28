@@ -51,7 +51,7 @@ include '../includes/header.php';
 <a href="arsip_donatur.php" class="btn btn-cancel" style="background-color: #F97316; margin-left: 10px;">Lihat Arsip Donatur</a>
 
 
-<table>
+<table class="responsive-table">
     <thead>
         <tr>
             <th>ID Donatur</th>
@@ -64,11 +64,11 @@ include '../includes/header.php';
     <tbody>
         <?php while ($row = $result->fetch_assoc()) { ?>
             <tr>
-                <td><?php echo $row['ID_donatur']; ?></td>
-                <td><?php echo $row['Nama_Donatur']; ?></td>
-                <td><?php echo $row['NO_WA']; ?></td>
-                <td><?php echo $row['Nama_User']; ?></td>
-                <td>
+                <td data-label="ID Donatur"><?php echo $row['ID_donatur']; ?></td>
+                <td data-label="Nama Donatur"><?php echo $row['Nama_Donatur']; ?></td>
+                <td data-label="No. WA"><?php echo $row['NO_WA']; ?></td>
+                <td data-label="Dibuat Oleh"><?php echo $row['Nama_User']; ?></td>
+                <td data-label="Aksi">
                     <a href="edit_donatur.php?id=<?php echo $row['ID_donatur']; ?>" class="btn btn-primary">Edit</a>
                     <a href="proses_arsip_donatur.php?id=<?php echo $row['ID_donatur']; ?>" class="btn btn-danger" onclick="return confirm('Apakah Anda yakin ingin mengarsipkan donatur ini?');">Arsipkan</a>
                 </td>

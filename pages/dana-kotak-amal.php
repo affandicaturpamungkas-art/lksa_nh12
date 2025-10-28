@@ -104,7 +104,7 @@ $result_history = $stmt_history->get_result();
 </div>
 
 <h2>Riwayat Pengambilan</h2>
-<table>
+<table class="responsive-table">
     <thead>
         <tr>
             <th>ID Kwitansi</th>
@@ -118,12 +118,12 @@ $result_history = $stmt_history->get_result();
     <tbody>
         <?php while ($row_hist = $result_history->fetch_assoc()) { ?>
             <tr>
-                <td><?php echo $row_hist['ID_Kwitansi_KA']; ?></td>
-                <td><?php echo $row_hist['Nama_Toko']; ?></td>
-                <td>Rp <?php echo number_format($row_hist['JmlUang']); ?></td>
-                <td><?php echo $row_hist['Tgl_Ambil']; ?></td>
-                <td><?php echo $row_hist['Nama_User']; ?></td>
-                <td>
+                <td data-label="ID Kwitansi"><?php echo $row_hist['ID_Kwitansi_KA']; ?></td>
+                <td data-label="Nama Toko"><?php echo $row_hist['Nama_Toko']; ?></td>
+                <td data-label="Jumlah Uang">Rp <?php echo number_format($row_hist['JmlUang']); ?></td>
+                <td data-label="Tanggal Ambil"><?php echo $row_hist['Tgl_Ambil']; ?></td>
+                <td data-label="Petugas"><?php echo $row_hist['Nama_User']; ?></td>
+                <td data-label="Aksi">
                     <a href="edit_dana_kotak_amal.php?id=<?php echo $row_hist['ID_Kwitansi_KA']; ?>" class="btn btn-primary btn-action-icon btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
                     <a href="hapus_dana_kotak_amal.php?id=<?php echo $row_hist['ID_Kwitansi_KA']; ?>" class="btn btn-danger btn-action-icon" title="Hapus" onclick="return confirm('Apakah Anda yakin ingin menghapus data pengambilan ini?');"><i class="fas fa-trash"></i></a>
                 </td>

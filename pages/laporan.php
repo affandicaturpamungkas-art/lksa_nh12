@@ -43,7 +43,7 @@ $stmt_laporan->close();
 <h1 class="dashboard-title"><i class="fas fa-inbox"></i> Kotak Masuk Laporan</h1>
 <p>Daftar pesan dan laporan yang dikirimkan oleh pengguna sistem (Internal, Donatur, Pemilik Kotak Amal).</p>
 
-<table id="laporan-table">
+<table id="laporan-table" class="responsive-table">
     <thead>
         <tr>
             <th>Tanggal Lapor</th>
@@ -89,15 +89,15 @@ $stmt_laporan->close();
             $button_style = ($row['Status_Baca'] == 'Belum Dibaca') ? 'background-color: #2c3e50;' : 'background-color: #3498db;';
         ?>
             <tr>
-                <td><?php echo date('d M Y H:i', strtotime($row['Tgl_Lapor'])); ?></td>
-                <td>
+                <td data-label="Tanggal Lapor"><?php echo date('d M Y H:i', strtotime($row['Tgl_Lapor'])); ?></td>
+                <td data-label="Pelapor (Tipe)">
                     <strong><?php echo htmlspecialchars($nama_pelapor); ?></strong> 
                     <small style="color:#6c757d;">(<?php echo htmlspecialchars($pelapor_type); ?>)</small>
                 </td>
-                <td><?php echo htmlspecialchars($row['Subjek']); ?></td>
-                <td><?php echo htmlspecialchars($row['ID_LKSA']); ?></td>
-                <td style="<?php echo $status_style; ?>"><?php echo $status_text; ?></td>
-                <td>
+                <td data-label="Subjek"><?php echo htmlspecialchars($row['Subjek']); ?></td>
+                <td data-label="LKSA Tujuan"><?php echo htmlspecialchars($row['ID_LKSA']); ?></td>
+                <td data-label="Status" style="<?php echo $status_style; ?>"><?php echo $status_text; ?></td>
+                <td data-label="Aksi">
                     <a href="detail_laporan.php?id=<?php echo $row['ID_Laporan']; ?>" class="btn btn-primary" style="<?php echo $button_style; ?> padding: 8px 15px;">
                         Lihat <i class="fas fa-eye"></i>
                     </a>

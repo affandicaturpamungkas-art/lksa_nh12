@@ -40,16 +40,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Mengambil data dari form
     $id_lksa = $_POST['id_lksa'] ?? '';
     $nama_toko = $_POST['nama_toko'] ?? '';
-    $alamat_toko = $_POST['alamat_toko'] ?? '';
+    $alamat_toko = $_POST['alamat_toko'] ?? ''; 
     $nama_pemilik = $_POST['nama_pemilik'] ?? '';
     $wa_pemilik = $_POST['wa_pemilik'] ?? '';
     $email_pemilik = $_POST['email_pemilik'] ?? '';
-    // Mengambil nilai langsung dari dropdown, tidak lagi array
+    
+    // Data Tanggal Pengambilan (YYYY-MM-DD)
     $jadwal_pengambilan = $_POST['jadwal_pengambilan'] ?? ''; 
+    
     $keterangan = $_POST['keterangan'] ?? '';
     $latitude = $_POST['latitude'] ?? null;
     $longitude = $_POST['longitude'] ?? null;
     $foto_path = null;
+    
+    // START: MENGAMBIL NAMA WILAYAH DARI HIDDEN FIELD
+    $provinsi_name = $_POST['provinsi_name'] ?? null;
+    $kabupaten_name = $_POST['kabupaten_name'] ?? null;
+    $kecamatan_name = $_POST['kecamatan_name'] ?? null;
+    $kelurahan_name = $_POST['kelurahan_name'] ?? null;
+    // END: MENGAMBIL NAMA WILAYAH
     
     // Menangani unggahan foto
     if (!empty($_FILES['foto']['name'])) {
@@ -60,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $foto_path = $upload_result['filename'];
     }
 
-    // Membuat ID Kotak Amal yang unik sesuai format KA_LKSA_NH_thbltgl_XXX
+    // Membuat ID Kotak Amal
     $tgl_id = date('ymd');
     $counter_sql = "SELECT COUNT(*) AS total FROM KotakAmal WHERE ID_KotakAmal LIKE 'KA_LKSA_NH_{$tgl_id}_%'";
     $result = $conn->query($counter_sql);
@@ -68,15 +77,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $counter = $row['total'] + 1;
     $id_kotak_amal = "KA_LKSA_NH_" . $tgl_id . "_" . str_pad($counter, 3, '0', STR_PAD_LEFT);
 
-    // Kueri SQL untuk memasukkan data kotak amal (tambahkan Latitude dan Longitude)
-    $sql = "INSERT INTO KotakAmal (ID_KotakAmal, Id_lksa, Nama_Toko, Alamat_Toko, Nama_Pemilik, WA_Pemilik, Email, Jadwal_Pengambilan, Ket, Foto, Latitude, Longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    // Kueri SQL untuk memasukkan data kotak amal (16 Kolom)
+    $sql = "INSERT INTO KotakAmal (ID_KotakAmal, Id_lksa, Nama_Toko, Alamat_Toko, ID_Provinsi, ID_Kabupaten, ID_Kecamatan, ID_Kelurahan, Nama_Pemilik, WA_Pemilik, Email, Jadwal_Pengambilan, Ket, Foto, Latitude, Longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
 
     if ($stmt === false) {
         die("Error saat menyiapkan kueri: " . $conn->error);
     }
-
-    $stmt->bind_param("ssssssssssdd", $id_kotak_amal, $id_lksa, $nama_toko, $alamat_toko, $nama_pemilik, $wa_pemilik, $email_pemilik, $jadwal_pengambilan, $keterangan, $foto_path, $latitude, $longitude);
+    
+    // Tipe parameter: 14 string (s) + 2 double (d) = 16 karakter
+    $stmt->bind_param("ssssssssssssssdd", 
+        $id_kotak_amal, 
+        $id_lksa, 
+        $nama_toko, 
+        $alamat_toko, 
+        // BINDING NAMA WILAYAH (string)
+        $provinsi_name, 
+        $kabupaten_name, 
+        $kecamatan_name, 
+        $kelurahan_name, 
+        $nama_pemilik, 
+        $wa_pemilik, 
+        $email_pemilik, 
+        $jadwal_pengambilan, // Tipe data DATE/DATETIME di MySQL di-handle dengan 's'
+        $keterangan, 
+        $foto_path, 
+        $latitude, 
+        $longitude
+    );
 
     if ($stmt->execute()) {
         header("Location: kotak-amal.php");

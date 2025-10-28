@@ -53,7 +53,7 @@ $stmt->close();
 <p>Lihat dan kelola semua transaksi sumbangan ZIS.</p>
 <a href="tambah_sumbangan.php" class="btn btn-success">Input Sumbangan Baru</a>
 
-<table>
+<table class="responsive-table">
     <thead>
         <tr>
             <th>ID Kwitansi</th>
@@ -66,11 +66,11 @@ $stmt->close();
     <tbody>
         <?php while ($row = $result->fetch_assoc()) { ?>
             <tr>
-                <td><?php echo $row['ID_Kwitansi_ZIS']; ?></td>
-                <td><?php echo $row['Nama_Donatur']; ?></td>
-                <td>Rp <?php echo number_format($row['Zakat_Profesi'] + $row['Zakat_Maal'] + $row['Infaq'] + $row['Sedekah'] + $row['Fidyah']); ?></td>
-                <td><?php echo $row['Tgl']; ?></td>
-                <td>
+                <td data-label="ID Kwitansi"><?php echo $row['ID_Kwitansi_ZIS']; ?></td>
+                <td data-label="Donatur"><?php echo $row['Nama_Donatur']; ?></td>
+                <td data-label="Total ZIS">Rp <?php echo number_format($row['Zakat_Profesi'] + $row['Zakat_Maal'] + $row['Infaq'] + $row['Sedekah'] + $row['Fidyah']); ?></td>
+                <td data-label="Tanggal"><?php echo $row['Tgl']; ?></td>
+                <td data-label="Aksi">
                     <a href="detail_sumbangan.php?id=<?php echo $row['ID_Kwitansi_ZIS']; ?>" class="btn btn-primary btn-action-icon btn-detail" title="Detail"><i class="fas fa-eye"></i></a>
                     <a href="edit_sumbangan.php?id=<?php echo $row['ID_Kwitansi_ZIS']; ?>" class="btn btn-primary btn-action-icon btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
                     <a href="hapus_sumbangan.php?id=<?php echo $row['ID_Kwitansi_ZIS']; ?>" class="btn btn-danger btn-action-icon" title="Hapus" onclick="return confirm('Apakah Anda yakin ingin menghapus sumbangan ini?');"><i class="fas fa-trash"></i></a>

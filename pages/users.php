@@ -34,7 +34,7 @@ $result = $conn->query($sql);
 <a href="tambah_pengguna.php" class="btn btn-success">Tambah Pengguna Baru</a>
 <a href="arsip_users.php" class="btn btn-cancel" style="background-color: #F97316; margin-left: 10px;">Lihat Arsip Pengguna</a>
 
-<table>
+<table class="responsive-table">
     <thead>
         <tr>
             <th>Nama User</th>
@@ -46,16 +46,16 @@ $result = $conn->query($sql);
     <tbody>
         <?php while ($row = $result->fetch_assoc()) { ?>
             <tr>
-                <td><?php echo $row['Nama_User']; ?></td>
-                <td><?php echo $row['Jabatan']; ?></td>
-                <td>
+                <td data-label="Nama User"><?php echo $row['Nama_User']; ?></td>
+                <td data-label="Jabatan"><?php echo $row['Jabatan']; ?></td>
+                <td data-label="Foto">
                     <?php if ($row['Foto']) { ?>
                         <img src="../assets/img/<?php echo htmlspecialchars($row['Foto']); ?>" alt="Foto Profil" style="width: 50px; height: 50px; object-fit: cover;">
                     <?php } else { ?>
                         Tidak Ada
                     <?php } ?>
                 </td>
-                <td>
+                <td data-label="Aksi">
                     <a href="edit_pengguna.php?id=<?php echo $row['Id_user']; ?>" class="btn btn-primary">Edit</a>
                     <a href="proses_arsip_pengguna.php?id=<?php echo $row['Id_user']; ?>" class="btn btn-danger" onclick="return confirm('Apakah Anda yakin ingin mengarsipkan pengguna ini?');">Arsipkan</a>
                 </td>

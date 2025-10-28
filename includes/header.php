@@ -549,6 +549,9 @@ if (isset($_SESSION['loggedin']) && isset($_SESSION['id_user'])) {
 
         .main-content-area {
             flex-grow: 1;
+            /* Perbaikan KRITIS untuk memastikan elemen ini tidak melebihi lebar */
+            width: 100%; 
+            min-width: 0; 
             /* Konten utama dashboard */
         }
 
@@ -733,7 +736,8 @@ if (isset($_SESSION['loggedin']) && isset($_SESSION['id_user'])) {
             }
             
             .main-content-area {
-                overflow-x: auto; /* Memungkinkan gulir horizontal untuk konten lebar (misalnya tabel) */
+                /* Perbaikan KRITIS untuk memastikan area konten dapat di-scroll horizontal */
+                overflow-x: auto; 
                 padding-bottom: 5px; 
             }
         }
