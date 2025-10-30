@@ -736,7 +736,7 @@ if (isset($_SESSION['loggedin']) && isset($_SESSION['id_user'])) {
             }
             
             .main-content-area {
-                /* Perbaikan KRITIS untuk memastikan area konten dapat di-scroll horizontal */
+                /* Perbaikan KRITIS untuk memastikan elemen ini tidak melebihi lebar */
                 overflow-x: auto; 
                 padding-bottom: 5px; 
             }

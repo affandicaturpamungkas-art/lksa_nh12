@@ -1,6 +1,7 @@
 <?php
 session_start();
 include '../config/database.php';
+// Note: $base_url is defined in '../includes/header.php'
 
 // Authorization check: Hanya Pimpinan, Kepala LKSA, dan Petugas Kotak Amal yang bisa mengakses
 if ($_SESSION['jabatan'] != 'Pimpinan' && $_SESSION['jabatan'] != 'Kepala LKSA' && $_SESSION['jabatan'] != 'Petugas Kotak Amal') {
@@ -14,6 +15,12 @@ $id_lksa = $_SESSION['id_lksa'];
 $sidebar_stats = ''; // Pastikan sidebar tampil
 
 include '../includes/header.php'; 
+
+// --- KONSTRUKSI URL PHP UNTUK JALUR ABSOLUT TERTINGGI (FIX 404) ---
+// Memastikan $base_url sudah didefinisikan di header.php (misal: http://localhost/lksa_nh/)
+// URL final yang dicari: http://localhost/lksa_nh/pages/get_wilayah.php
+$api_full_url = $base_url . 'pages/get_wilayah.php';
+// --------------------------------------------------------
 ?>
 <div class="form-container">
     <h1>Tambah Kotak Amal Baru</h1>
@@ -37,7 +44,7 @@ include '../includes/header.php';
         </div>
 
         <div class="form-section">
-            <h2>Alamat Tempat (API Wilayah)</h2>
+            <h2>Alamat Tempat (Database Wilayah Lokal)</h2>
             <div class="form-grid">
                 <div class="form-group">
                     <label>Provinsi:</label>
@@ -144,14 +151,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalAddressInput = document.getElementById('alamat_toko_hidden_final');
     const detailAddressInput = document.getElementById('alamat_detail');
     
-    // --- Elemen Hidden Fields Baru untuk Nama Wilayah ---
+    // --- Elemen Hidden Fields untuk Nama Wilayah ---
     const provinsiNameHidden = document.getElementById('provinsi_name_hidden');
     const kabupatenNameHidden = document.getElementById('kabupaten_name_hidden');
     const kecamatanNameHidden = document.getElementById('kecamatan_name_hidden');
     const kelurahanNameHidden = document.getElementById('kelurahan_name_hidden');
     // --------------------------------------------------
 
-    // ... (Kode Geolocation, tidak berubah) ...
+    // --- Geolocation Logic (Tidak Berubah) ---
     const getLocationButton = document.getElementById('getLocationButton');
     const latitudeInput = document.getElementById('latitude');
     const longitudeInput = document.getElementById('longitude');
@@ -186,123 +193,121 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // --- API Wilayah Logic (MOCK) ---
+    // ====================================================================
+    // === API WILAYAH LOKAL (Menggunakan get_wilayah.php) - JALUR ABSOLUT FIX =
+    // ====================================================================
+    
+    // MENGGUNAKAN VARIABEL PHP YANG SUDAH DIBUAT DENGAN JALUR LENGKAP (API_URL)
+    const API_URL = '<?php echo $api_full_url; ?>'; 
+
     const selectProvinsi = document.getElementById('provinsi');
     const selectKabupaten = document.getElementById('kabupaten');
     const selectKecamatan = document.getElementById('kecamatan');
     const selectKelurahan = document.getElementById('kelurahan');
 
-    // URL MOCK UNTUK DEMONSTRASI LOGIKA CHAINING (Ganti dengan API sungguhan)
-    const API_URL = 'https://mock-api.com/api/wilayah/indonesia'; 
-
-    async function fetchData(url) {
-        // --- MOCK DATA SIMULASI API WILAYAH ---
-        const mockData = {
-            'provinces': [
-                { id: '33', name: 'JAWA TENGAH' },
-                { id: '34', name: 'DI YOGYAKARTA' }
-            ],
-            'regencies': {
-                '33': [{ id: '3372', name: 'KOTA SURAKARTA' }, { id: '3301', name: 'KABUPATEN CILACAP' }],
-                '34': [{ id: '3404', name: 'KABUPATEN SLEMAN' }, { id: '3471', name: 'KOTA YOGYAKARTA' }]
-            },
-            'districts': {
-                '3372': [{ id: '337201', name: 'PASAR KLIWON' }, { id: '337202', name: 'SERENGAN' }],
-                '3404': [{ id: '340401', name: 'GAMPING' }, { id: '340402', name: 'MLATI' }]
-            },
-            'villages': {
-                '337201': [{ id: '3372010001', name: 'SANGKRAH' }, { id: '3372010002', name: 'SEWU' }],
-                '340401': [{ id: '3404010001', name: 'BALECATUR' }, { id: '3404010002', name: 'BANYURADEN' }]
+    /**
+     * Fungsi untuk mengambil data dari proxy PHP lokal.
+     * @param {string} parentId - Kode induk wilayah (kosong untuk provinsi).
+     * @returns {Promise<string>} Data wilayah dalam format HTML <option> tags.
+     */
+    async function fetchWilayah(parentId = "") {
+        try {
+            // Menggunakan API_URL absolut yang sudah diverifikasi oleh PHP
+            const url = `${API_URL}${parentId ? `?id=${parentId}` : ''}&sid=${Math.random()}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                // Memberikan status HTTP error yang jelas jika server gagal merespon (e.g., 404, 500)
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        };
+            
+            const responseText = await response.text(); 
+            
+            // Cek apakah responseText mengandung pesan error database
+            if (responseText.includes("Error Database")) {
+                 throw new Error(responseText);
+            }
 
-        return new Promise(resolve => {
-            setTimeout(() => {
-                if (url.includes('provinces')) {
-                    resolve(mockData.provinces);
-                } else if (url.includes('/regencies/')) {
-                    const id = url.split('/regencies/')[1];
-                    resolve(mockData.regencies[id] || []);
-                } else if (url.includes('/districts/')) {
-                    const id = url.split('/districts/')[1];
-                    resolve(mockData.districts[id] || []);
-                } else if (url.includes('/villages/')) {
-                    const id = url.split('/villages/')[1];
-                    resolve(mockData.villages[id] || []);
-                } else {
-                    resolve([]);
-                }
-            }, 500);
-        });
-    }
-
-    function populateDropdown(dropdown, data, placeholder) {
-        dropdown.innerHTML = `<option value="">${placeholder}</option>`;
-        data.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.id; 
-            option.textContent = item.name;
-            option.setAttribute('data-name', item.name); 
-            dropdown.appendChild(option);
-        });
-        dropdown.disabled = (data.length === 0);
+            return responseText;
+        } catch (error) {
+            console.error("Gagal mengambil data wilayah:", error);
+            // Menampilkan error SweetAlert
+            Swal.fire('Error Wilayah', error.message || 'Gagal memuat data wilayah. Cek jalur file.', 'error');
+            return "<option value=''>Gagal memuat</option>";
+        }
     }
 
     // 1. Ambil data Provinsi saat halaman dimuat
     (async () => {
-        const provinces = await fetchData(`${API_URL}/provinces`);
-        populateDropdown(selectProvinsi, provinces, '-- Pilih Provinsi --');
+        const htmlOptions = await fetchWilayah();
+        selectProvinsi.innerHTML = htmlOptions;
+        selectProvinsi.disabled = htmlOptions.includes("Gagal memuat") || htmlOptions.includes("Error");
+        if (!selectProvinsi.disabled) selectProvinsi.disabled = false;
     })();
 
     // 2. Event Listeners untuk Chaining (Provinsi -> Kabupaten)
     selectProvinsi.addEventListener('change', async () => {
-        selectKabupaten.innerHTML = '<option value="">-- Memuat... --</option>';
+        selectKabupaten.innerHTML = '<option value="">Pilih Kota/Kabupaten</option>'; 
         selectKabupaten.disabled = true;
         selectKecamatan.disabled = true;
         selectKelurahan.disabled = true;
-        selectKecamatan.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-        selectKelurahan.innerHTML = '<option value="">-- Pilih Kelurahan/Desa --</option>';
+        selectKecamatan.innerHTML = '<option value="">Pilih Kecamatan</option>';
+        selectKelurahan.innerHTML = '<option value="">Pilih Kelurahan/Desa</option>';
 
-        if (selectProvinsi.value) {
-            const regencies = await fetchData(`${API_URL}/regencies/${selectProvinsi.value}`);
-            populateDropdown(selectKabupaten, regencies, '-- Pilih Kota/Kabupaten --');
+        const provId = selectProvinsi.value;
+        if (provId) {
+            const htmlOptions = await fetchWilayah(provId);
+            selectKabupaten.innerHTML = htmlOptions;
+            selectKabupaten.disabled = htmlOptions.includes("Gagal memuat") || htmlOptions.includes("Pilih Kota/Kabupaten") || htmlOptions.includes("Error");
+            if (!selectKabupaten.disabled) selectKabupaten.disabled = false;
         }
     });
 
     // 3. Event Listeners untuk Chaining (Kabupaten -> Kecamatan)
     selectKabupaten.addEventListener('change', async () => {
-        selectKecamatan.innerHTML = '<option value="">-- Memuat... --</option>';
+        selectKecamatan.innerHTML = '<option value="">Pilih Kecamatan</option>';
         selectKecamatan.disabled = true;
         selectKelurahan.disabled = true;
-        selectKelurahan.innerHTML = '<option value="">-- Pilih Kelurahan/Desa --</option>';
+        selectKelurahan.innerHTML = '<option value="">Pilih Kelurahan/Desa</option>';
 
-        if (selectKabupaten.value) {
-            const districts = await fetchData(`${API_URL}/districts/${selectKabupaten.value}`);
-            populateDropdown(selectKecamatan, districts, '-- Pilih Kecamatan --');
+        const kabId = selectKabupaten.value;
+        if (kabId) {
+            const htmlOptions = await fetchWilayah(kabId);
+            selectKecamatan.innerHTML = htmlOptions;
+            selectKecamatan.disabled = htmlOptions.includes("Gagal memuat") || htmlOptions.includes("Pilih Kecamatan") || htmlOptions.includes("Error");
+            if (!selectKecamatan.disabled) selectKecamatan.disabled = false;
         }
     });
 
     // 4. Event Listeners untuk Chaining (Kecamatan -> Kelurahan)
     selectKecamatan.addEventListener('change', async () => {
-        selectKelurahan.innerHTML = '<option value="">-- Memuat... --</option>';
+        selectKelurahan.innerHTML = '<option value="">Pilih Kelurahan/Desa</option>';
         selectKelurahan.disabled = true;
 
-        if (selectKecamatan.value) {
-            const villages = await fetchData(`${API_URL}/villages/${selectKecamatan.value}`);
-            populateDropdown(selectKelurahan, villages, '-- Pilih Kelurahan/Desa --');
+        const kecId = selectKecamatan.value;
+        if (kecId) {
+            const htmlOptions = await fetchWilayah(kecId);
+            selectKelurahan.innerHTML = htmlOptions;
+            selectKelurahan.disabled = htmlOptions.includes("Gagal memuat") || htmlOptions.includes("Pilih Kelurahan/Desa") || htmlOptions.includes("Error");
+            if (!selectKelurahan.disabled) selectKelurahan.disabled = false;
         }
     });
     
-    // --- Logika Penggabungan Alamat Final SEBELUM Submit ---
+    /**
+     * Mengambil nilai text dari selected option (untuk disimpan sebagai nama di DB).
+     */
     function getSelectedText(selectElement) {
         const selectedOption = selectElement.options[selectElement.selectedIndex];
-        return selectedOption ? selectedOption.getAttribute('data-name') : '';
+        if (selectedOption && selectedOption.value) {
+            return selectedOption.textContent;
+        }
+        return '';
     }
 
     form.addEventListener('submit', (e) => {
         e.preventDefault(); 
         
-        // 1. Ambil nama wilayah dan alamat detail
+        // 1. Ambil nama wilayah dari dropdown
         const provinsiName = getSelectedText(selectProvinsi);
         const kabupatenName = getSelectedText(selectKabupaten);
         const kecamatanName = getSelectedText(selectKecamatan);
@@ -320,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
         kecamatanNameHidden.value = kecamatanName;
         kelurahanNameHidden.value = kelurahanName;
         
-        // 2. Gabungkan alamat
+        // 2. Gabungkan alamat lengkap
         let fullAddress = alamatDetail;
         if (kelurahanName) fullAddress += `, ${kelurahanName}`;
         if (kecamatanName) fullAddress += `, ${kecamatanName}`;
